@@ -130,6 +130,54 @@ class HelpListener(Leap.Listener):
         wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
         return (hand_bool and wristPos_bool)
 
+    def checkRotatingLeft(self, hdata, adata):
+        global pitch, roll, yaw, wristPos_x, wristPos_y, wristPos_z
+        pitch_bool = self.checkPitchWithCallabration(hdata['pitch'], pitch)
+        roll_bool = self.checkRollWithCallabration(hdata['roll'], roll)
+        yaw_bool = self.checkYawWithCallabration(hdata['yaw'], yaw)
+        wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
+        wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
+        wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
+        hand_bool = ((pitch_bool[0] == pitch_bool[1]) and (roll_bool[0] == roll_bool[1]) and ((yaw_bool[0] == False) and  (yaw_bool[1] == True)))
+        wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
+        return (hand_bool and wristPos_bool)
+
+    def checkRotatingRight(self, hdata, adata):
+        global pitch, roll, yaw, wristPos_x, wristPos_y, wristPos_z
+        pitch_bool = self.checkPitchWithCallabration(hdata['pitch'], pitch)
+        roll_bool = self.checkRollWithCallabration(hdata['roll'], roll)
+        yaw_bool = self.checkYawWithCallabration(hdata['yaw'], yaw)
+        wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
+        wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
+        wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
+        hand_bool = ((pitch_bool[0] == pitch_bool[1]) and (roll_bool[0] == roll_bool[1]) and ((yaw_bool[0] == True) and  (yaw_bool[1] == False)))
+        wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
+        return (hand_bool and wristPos_bool)
+
+    def checkRising(self, hdata, adata):
+        global pitch, roll, yaw, wristPos_x, wristPos_y, wristPos_z
+        pitch_bool = self.checkPitchWithCallabration(hdata['pitch'], pitch)
+        roll_bool = self.checkRollWithCallabration(hdata['roll'], roll)
+        yaw_bool = self.checkYawWithCallabration(hdata['yaw'], yaw)
+        wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
+        wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
+        wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
+        hand_bool = (((pitch_bool[0] == True) and  (pitch_bool[1]== False)) and (roll_bool[0] == roll_bool[1]) and (yaw_bool[0] == yaw_bool[1]))
+        wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
+        return (hand_bool and wristPos_bool)
+
+    def checkFalling(self, hdata, adata):
+        global pitch, roll, yaw, wristPos_x, wristPos_y, wristPos_z
+        pitch_bool = self.checkPitchWithCallabration(hdata['pitch'], pitch)
+        roll_bool = self.checkRollWithCallabration(hdata['roll'], roll)
+        yaw_bool = self.checkYawWithCallabration(hdata['yaw'], yaw)
+        wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
+        wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
+        wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
+        hand_bool = (((pitch_bool[0] == False) and  (pitch_bool[1]== True)) and (roll_bool[0] == roll_bool[1]) and (yaw_bool[0] == yaw_bool[1]))
+        wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
+        return (hand_bool and wristPos_bool)
+
     def parseHandData(self, hand):
         rtodg = Leap.RAD_TO_DEG
         normal = hand.palm_normal
@@ -139,6 +187,12 @@ class HelpListener(Leap.Listener):
         yaw = direction.yaw * rtodg
         hand_data = {'pitch': pitch, 'roll': roll, 'yaw': yaw}
         return hand_data
+
+    def parseArmData(self, arm):
+        x = arm.wrist_position[0]
+        y = arm.wrist_position[1]
+        z = arm.wrist_position[2]
+        return {'x': x, 'y': y, 'z': z}
 
     def toggleInFlight(self):
         global inFlight
