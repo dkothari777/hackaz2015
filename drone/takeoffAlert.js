@@ -13,5 +13,6 @@ client
 		this.stop();
 		this.land(function() {
 			console.log("Landed.");
-		})});
+		});
+	});
 
