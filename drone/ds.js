@@ -1,11 +1,17 @@
 var express = require('express');
 var app = express();
 
-var turnSpeed = .5;
-var moveSpeed = .5;
-var vertSpeed = .5;
+var turnSpeed = .2;
+var moveSpeed = .2;
+var vertSpeed = .2;
+
+var c;
 
 app.get('/takeoff', function(req, res) {
+	var arDrone = require('ar-drone');
+	var client = arDrone.createClient();
+	c = client;
+
 	gc('Taking off.').takeoff();
 });
 
@@ -55,11 +61,8 @@ function gc(out) {
 }
 
 function getClient() {
-	var arDrone = require('ar-drone');
-	var client = arDrone.createClient();
-
-	client.stop();
-	return client;
+	c.stop();
+	return c;
 }
 
 app.listen(3000);
