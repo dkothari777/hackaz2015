@@ -11,12 +11,14 @@ sys.path.insert(0, lib_dir)
 #import the Leap library
 import Leap
 import time
-from jsonClient import JsonSocket
+import httplib
 inFlight = False
 change = False
 
-client = JsonSocket()
+import pycurl
 #Callibration var for hovering position.
+url = "192.168.1.2"
+
 callibration = True
 counter = 0
 pitch = 0
@@ -42,7 +44,7 @@ class HelpListener(Leap.Listener):
         print "Exit"
 
     def on_frame(self, controller):
-        global inFlight, callibration, counter
+        global inFlight, callibration, counter, conn, url
         frame = controller.frame()
         hands = frame.hands
         if len(hands) > 1:
@@ -53,6 +55,7 @@ class HelpListener(Leap.Listener):
             else:
                 if inFlight == True:
                     print "Landing"
+                    httplib.HTTPConnection(str(url)+"/land",3000)
                     inFlight = False
                     callibration = True
                     counter = 0
@@ -89,28 +92,36 @@ class HelpListener(Leap.Listener):
 
     def findCommand(self, hdata, adata):
             #find the commmand to send to UV
-            global inFlight, client
+            global inFlight, client, conn
             if self.checkHovering(hdata, adata) and inFlight == False:
                 self.toggleInFlight()
             else:
                 if not self.checkHovering(hdata, adata) and inFlight == True:
                     if self.checkTurningLeft(hdata, adata):
                         print "Moving Left"
+                        httplib.HTTPConnection(url+"/ml")
                     elif self.checkTurningRight(hdata, adata):
                         print "Moving Right"
+                        httplib.HTTPConnection(url+"/mr")
                     elif self.checkFalling(hdata, adata):
                         print "Diving"
+                        httplib.HTTPConnection(url+"/d")
                     elif self.checkRising(hdata, adata):
                         print "Rising"
+                        httplib.HTTPConnection(url+"/u")
                     elif self.checkRotatingLeft(hdata, adata):
                         print "Rotating Left"
+                        httplib.HTTPConnection(url+"/tl")
                     elif self.checkRotatingRight(hdata, adata):
                         print "Rotating Right"
+                        httplib.HTTPConnection(url+"/tr")
                     else:
                         print "Do not Understand, hence Hovering"
+                        httplib.HTTPConnection(url+"/stop")
                 else:
                     if inFlight == True:
-                        client.sendObj("Hover")
+                        print url + "/stop"
+                        httplib.HTTPConnection(url+"/stop")
                         print "Hovering"
                     else:
                         print "Please place hand in hovering mode"
@@ -236,10 +247,12 @@ class HelpListener(Leap.Listener):
         return {'x': x, 'y': y, 'z': z}
 
     def toggleInFlight(self):
-        global inFlight
+        global inFlight, url
         if inFlight == False:
             print "Starting to Fly"
+            print str(url)+"/takeoff"
             inFlight = True
+            httplib.HTTPConnection(str(url)+"/takeoff", 3000)
 
 def main():
     #initialize Listener Helper here before retrieving controller object
