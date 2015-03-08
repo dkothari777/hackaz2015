@@ -10,11 +10,15 @@ lib_dir = os.path.abspath(os.path.join(src_dir, '../lib'))
 sys.path.insert(0, lib_dir)
 #import the Leap library
 import Leap
+import time
+from jsonClient import JsonSocket
 inFlight = False
 change = False
 
-#Callibration final var for hovering position.
+client = JsonSocket()
+#Callibration var for hovering position.
 callibration = True
+counter = 0
 pitch = 0
 yaw = 0
 roll = 0
@@ -38,60 +42,97 @@ class HelpListener(Leap.Listener):
         print "Exit"
 
     def on_frame(self, controller):
-        global inFlight
+        global inFlight, callibration, counter
         frame = controller.frame()
         hands = frame.hands
         if len(hands) > 1:
             print "Please use one hand only"
         elif len(hands) == 0:
-            if inFlight == True:
-                print "Landing"
-                inFlight = False
+            if callibration == True:
+                print "Please place one hand over the Leap for callibration"
             else:
-                print "No hands are detected"
-        else:
-            self.findCommand(self.parseHandData(hands[0]))
-
-    def findCommand(self, handdata):
-            #find the commmand to send to UV
-            global change
-            if (handdata['pitch'] < 30 and handdata['pitch'] > 10) and (handdata['roll'] > -10 and handdata['roll'] < 10) and (handdata['yaw'] > -10 and handdata['yaw'] < 10) and change == False:
-                self.toggleInFlight()
-                change = True
-            else:
-                if not ((handdata['pitch'] < 30 and handdata['pitch'] > 10) and (handdata['roll'] > -10 and handdata['roll'] < 10) and (handdata['yaw'] > -10 and handdata['yaw'] < 10)):
-                    change = False
-                    if( (handdata['pitch'] < 30 and handdata['pitch'] > 10) and (handdata['roll'] > -10 and handdata['roll'] < 10) and handdata['yaw'] < -10):
-                        print "Moving Left"
-                    elif ( (handdata['pitch'] < 30 and handdata['pitch'] > 10) and (handdata['roll'] > -10 and handdata['roll'] < 10) and handdata['yaw'] > 10):
-                        print "Moving Right"
-                    elif (handdata['pitch'] < 10 and (handdata['roll'] > -10 and handdata['roll'] < 10) and (handdata['yaw'] > -10 and handdata['yaw'] < 10)):
-                        print "Diving"
-                    elif (handdata['pitch'] > 30 and (handdata['roll'] > -10 and handdata['roll'] < 10) and (handdata['yaw'] > -10 and handdata['yaw'] < 10)):
-                        print "Rising"
-                    else:
-                        print "Do not Understand"
+                if inFlight == True:
+                    print "Landing"
+                    inFlight = False
+                    callibration = True
+                    counter = 0
                 else:
-                    print "Hovering"
+                    print "No hands are detected"
+        else:
+            if callibration == True:
+                self.callibration_Leap(self.parseHandData(hands[0]), self.parseArmData(hands[0].arm))
+            else:
+                self.findCommand(self.parseHandData(hands[0]), self.parseArmData(hands[0].arm))
+
+    def callibration_Leap(self, hdata, adata):
+        global callibration, counter, pitch, yaw, roll, wristPos_x, wristPos_y, wristPos_z
+        if counter == 0:
+            print "Callibrating"
+            pitch = hdata['pitch']
+            yaw = hdata['yaw']
+            roll = hdata['roll']
+            wristPos_x = adata['x']
+            wristPos_y = adata['y']
+            wristPos_z = adata['z']
+            counter += 1
+        else:
+            if counter == 500:
+                print "callibration done"
+                callibration = False
+            counter += 1
+            pitch = (pitch + hdata['pitch'])/2
+            yaw = (yaw + hdata['yaw'])/2
+            roll = (roll + hdata['roll'])/2
+            wristPos_x = (wristPos_x + adata['x'])/2
+            wristPos_y = (wristPos_y + adata['y'])/2
+            wristPos_z = (wristPos_z + adata['z'])/2
+
+    def findCommand(self, hdata, adata):
+            #find the commmand to send to UV
+            global inFlight, client
+            if self.checkHovering(hdata, adata) and inFlight == False:
+                self.toggleInFlight()
+            else:
+                if not self.checkHovering(hdata, adata) and inFlight == True:
+                    if self.checkTurningLeft(hdata, adata):
+                        print "Moving Left"
+                    elif self.checkTurningRight(hdata, adata):
+                        print "Moving Right"
+                    elif self.checkFalling(hdata, adata):
+                        print "Diving"
+                    elif self.checkRising(hdata, adata):
+                        print "Rising"
+                    elif self.checkRotatingLeft(hdata, adata):
+                        print "Rotating Left"
+                    elif self.checkRotatingRight(hdata, adata):
+                        print "Rotating Right"
+                    else:
+                        print "Do not Understand, hence Hovering"
+                else:
+                    if inFlight == True:
+                        client.sendObj("Hover")
+                        print "Hovering"
+                    else:
+                        print "Please place hand in hovering mode"
 
     def checkPitchWithCallabration(self, data, bounds):
-        bool_upper = data < bounds + 10
-        bool_lower = data > bounds - 10
+        bool_upper = data < bounds + 15
+        bool_lower = data > bounds - 15
         return [bool_upper, bool_lower]
 
     def checkRollWithCallabration(self, data, bounds):
-        bool_upper = data < bounds + 10
-        bool_lower = data > bounds - 10
+        bool_upper = data < bounds + 15
+        bool_lower = data > bounds - 15
         return [bool_upper, bool_lower]
 
     def checkYawWithCallabration(self, data, bounds):
-        bool_upper = data < bounds + 10
-        bool_lower = data > bounds - 10
+        bool_upper = data < bounds + 15
+        bool_lower = data > bounds - 15
         return [bool_upper, bool_lower]
 
     def checkWristPosition_XYZ(self, data, bounds):
-        bool_upper = data < bounds + 10
-        bool_lower = data > bounds - 10
+        bool_upper = data < bounds + 100
+        bool_lower = data > bounds - 100
         return [bool_upper, bool_lower]
 
     def checkHovering(self, hdata, adata):
@@ -106,7 +147,7 @@ class HelpListener(Leap.Listener):
         wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
         return (hand_bool and wristPos_bool)
 
-    def checkTurningLeft(self, hdata, adata):
+    def checkTurningRight(self, hdata, adata):
         global pitch, roll, yaw, wristPos_x, wristPos_y, wristPos_z
         pitch_bool = self.checkPitchWithCallabration(hdata['pitch'], pitch)
         roll_bool = self.checkRollWithCallabration(hdata['roll'], roll)
@@ -118,7 +159,7 @@ class HelpListener(Leap.Listener):
         wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
         return (hand_bool and wristPos_bool)
 
-    def checkTurningRight(self, hdata, adata):
+    def checkTurningLeft(self, hdata, adata):
         global pitch, roll, yaw, wristPos_x, wristPos_y, wristPos_z
         pitch_bool = self.checkPitchWithCallabration(hdata['pitch'], pitch)
         roll_bool = self.checkRollWithCallabration(hdata['roll'], roll)
@@ -138,7 +179,7 @@ class HelpListener(Leap.Listener):
         wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
         wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
         wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
-        hand_bool = ((pitch_bool[0] == pitch_bool[1]) and (roll_bool[0] == roll_bool[1]) and ((yaw_bool[0] == False) and  (yaw_bool[1] == True)))
+        hand_bool = ((pitch_bool[0] == pitch_bool[1]) and (roll_bool[0] == roll_bool[1]) and ((yaw_bool[0] == True) and  (yaw_bool[1] == False)))
         wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
         return (hand_bool and wristPos_bool)
 
@@ -150,7 +191,7 @@ class HelpListener(Leap.Listener):
         wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
         wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
         wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
-        hand_bool = ((pitch_bool[0] == pitch_bool[1]) and (roll_bool[0] == roll_bool[1]) and ((yaw_bool[0] == True) and  (yaw_bool[1] == False)))
+        hand_bool = ((pitch_bool[0] == pitch_bool[1]) and (roll_bool[0] == roll_bool[1]) and ((yaw_bool[0] == False) and  (yaw_bool[1] == True)))
         wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
         return (hand_bool and wristPos_bool)
 
@@ -162,7 +203,7 @@ class HelpListener(Leap.Listener):
         wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
         wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
         wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
-        hand_bool = (((pitch_bool[0] == True) and  (pitch_bool[1]== False)) and (roll_bool[0] == roll_bool[1]) and (yaw_bool[0] == yaw_bool[1]))
+        hand_bool = (((pitch_bool[0] == False) and  (pitch_bool[1]== True)) and (roll_bool[0] == roll_bool[1]) and (yaw_bool[0] == yaw_bool[1]))
         wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
         return (hand_bool and wristPos_bool)
 
@@ -174,7 +215,7 @@ class HelpListener(Leap.Listener):
         wristPos_boolx = self.checkWristPosition_XYZ(adata['x'], wristPos_x)
         wristPos_booly = self.checkWristPosition_XYZ(adata['y'], wristPos_y)
         wristPos_boolz = self.checkWristPosition_XYZ(adata['z'], wristPos_z)
-        hand_bool = (((pitch_bool[0] == False) and  (pitch_bool[1]== True)) and (roll_bool[0] == roll_bool[1]) and (yaw_bool[0] == yaw_bool[1]))
+        hand_bool = (((pitch_bool[0] == True) and  (pitch_bool[1]== False)) and (roll_bool[0] == roll_bool[1]) and (yaw_bool[0] == yaw_bool[1]))
         wristPos_bool = ((wristPos_boolx[0] == wristPos_boolx[1]) and (wristPos_booly[0] == wristPos_booly[1]) and (wristPos_boolz[0] == wristPos_boolz[1]))
         return (hand_bool and wristPos_bool)
 
