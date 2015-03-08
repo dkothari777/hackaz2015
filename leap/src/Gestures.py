@@ -111,12 +111,12 @@ class HelpListener(Leap.Listener):
                     elif self.checkFalling(hdata, adata):
                         print "Diving"
                         conn = httplib.HTTPConnection("192.168.1.3:3000")
-                        conn.request("GET", "/d")
+                        conn.request("GET", "/f")
                         conn.close()
                     elif self.checkRising(hdata, adata):
                         print "Rising"
                         conn = httplib.HTTPConnection("192.168.1.3:3000")
-                        conn.request("GET", "/u")
+                        conn.request("GET", "/b")
                         conn.close()
                     elif self.checkRotatingLeft(hdata, adata):
                         print "Rotating Left"
