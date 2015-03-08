@@ -16,7 +16,7 @@ inFlight = False
 change = False
 
 #Callibration var for hovering position.
-conn = httplib.HTTPConnection("192.168.1.3:3000")
+conn = httplib.HTTPConnection("192.168.1.201:3000")
 callibration = True
 counter = 0
 pitch = 0
@@ -53,7 +53,7 @@ class HelpListener(Leap.Listener):
             else:
                 if inFlight == True:
                     print "Landing"
-                    conn = httplib.HTTPConnection("192.168.1.3:3000")
+                    conn = httplib.HTTPConnection("192.168.1.201:3000")
                     conn.request("GET", "/land")
                     conn.close()
                     inFlight = False
@@ -100,42 +100,42 @@ class HelpListener(Leap.Listener):
                 if not self.checkHovering(hdata, adata) and inFlight == True:
                     if self.checkTurningLeft(hdata, adata):
                         print "Moving Left"
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/ml")
                         conn.close()
                     elif self.checkTurningRight(hdata, adata):
                         print "Moving Right"
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/mr")
                         conn.close()
                     elif self.checkFalling(hdata, adata):
                         print "Diving"
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/f")
                         conn.close()
                     elif self.checkRising(hdata, adata):
                         print "Rising"
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/b")
                         conn.close()
                     elif self.checkRotatingLeft(hdata, adata):
                         print "Rotating Left"
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/tl")
                         conn.close()
                     elif self.checkRotatingRight(hdata, adata):
                         print "Rotating Right"
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/tr")
                         conn.close()
                     else:
                         print "Do not Understand, hence Hovering"
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/stop")
                         conn.close()
                 else:
                     if inFlight == True:
-                        conn = httplib.HTTPConnection("192.168.1.3:3000")
+                        conn = httplib.HTTPConnection("192.168.1.201:3000")
                         conn.request("GET", "/stop")
                         conn.close()
                         print "Hovering"
@@ -269,7 +269,7 @@ class HelpListener(Leap.Listener):
             url = "192.168.1.2"
             print url+"/takeoff"
             inFlight = True
-            conn = httplib.HTTPConnection("192.168.1.3:3000")
+            conn = httplib.HTTPConnection("192.168.1.201:3000")
             conn.request("GET", "/takeoff")
             conn.close()
 
