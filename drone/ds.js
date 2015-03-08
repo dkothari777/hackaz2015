@@ -3,7 +3,7 @@ var app = express();
 
 var turnSpeed = .2;
 var moveSpeed = .2;
-var vertSpeed = .2;
+var vertSpeed = .2	;
 
 var c;
 
@@ -13,6 +13,7 @@ app.get('/takeoff', function(req, res) {
 	c = client;
 
 	gc('Taking off.').takeoff();
+	res.sendStatus(200);
 });
 
 app.get('/tr', function(req, res) {
@@ -48,6 +49,7 @@ app.get('/land', function(req, res) {
 	var client = gc('Landing');
 	client.stop();
 	client.land();
+	res.sendStatus(200);
 });
 
 // default case
