@@ -3,68 +3,109 @@ var app = express();
 
 var turnSpeed = .2;
 var moveSpeed = .2;
-var vertSpeed = .2	;
+var vertSpeed = .2;
 
-var c;
+var arDrone = require('ar-drone');
+var drones = [
+	arDrone.createClient({ip: '192.168.1.200'}),
+	arDrone.createClient({ip: '192.168.1.202'})
+];
 
 app.get('/takeoff', function(req, res) {
-	var arDrone = require('ar-drone');
-	var client = arDrone.createClient();
-	c = client;
+	gc('Taking off.', res)
+	drones.forEach(function(drone){
+		drone.takeoff();
+	});
 
-	gc('Taking off.').takeoff();
-	res.sendStatus(200);
+	diff(drones[1]);
 });
 
 app.get('/tr', function(req, res) {
-	gc('Turning right').clockwise(turnSpeed);
+	gc('Turning right', res)
+	drones.forEach(function(drone){
+		drone.clockwise(turnSpeed);
+	});
 });
 app.get('/tl', function(req, res) {
-	gc('Turning left').counterClockwise(turnSpeed);
+	gc('Turning left', res)
+	drones.forEach(function(drone){
+		drone.counterClockwise(turnSpeed);
+	});
 });
 app.get('/mr', function(req, res) {
-	gc('Moving right').right(moveSpeed);
+	gc('Moving right', res)
+	drones.forEach(function(drone){
+		drone.right(moveSpeed);
+	});
 });
 app.get('/ml', function(req, res) {
-	gc('Moving left').left(moveSpeed);
+	gc('Moving left', res)
+	drones.forEach(function(drone){
+		drone.left(moveSpeed);
+	});
 });
 app.get('/u', function(req, res) {
-	gc('Moving up').up(vertSpeed);
+	gc('Moving up', res)
+	drones.forEach(function(drone){
+		drone.up(vertSpeed);
+
+	});
 });
 app.get('/d', function(req, res) {
-	gc('Moving down').down(vertSpeed);
+	gc('Moving down', res)
+	drones.forEach(function(drone){
+		drone.down(vertSpeed);
+
+	});
 });
 app.get('/f', function(req, res) {
-	gc('Moving forward').front(moveSpeed);
+	gc('Moving forward', res)
+	drones.forEach(function(drone){
+		drone.front(moveSpeed);
+	});
 });
 app.get('/b', function(req, res) {
-	gc('Moving backward').back(moveSpeed);
+	gc('Moving backward', res)
+	drones.forEach(function(drone){
+		drone.back(moveSpeed);
+	});
 });
 
 app.get('/panic', function(req, res) {
-	gc('Panicking!').land();
+	gc('Panicking!', res)
+	drones.forEach(function(drone){
+		drone.land();
+	});
 });
 
 app.get('/land', function(req, res) {
-	var client = gc('Landing');
-	client.stop();
-	client.land();
-	res.sendStatus(200);
+	gc('Landing', res);
+	drones.forEach(function(drone){
+		drone.stop();
+	});
+	drones.forEach(function(drone){
+		drone.land();
+	});
 });
 
 // default case
 app.get('*', function(req, res) {
-	gc('Received unknown command. Halting.').stop();
+	gc('Received unknown command. Halting.', res)
+	drones.forEach(function(drone){
+		drone.stop();
+	});
 });
 
-function gc(out) {
+function gc(out, response) {
 	console.log(out);
-	return getClient();
+	response.sendStatus(200);
 }
 
-function getClient() {
-	c.stop();
-	return c;
+function diff(drone) {
+	drone.up(vertSpeed);
+	drone.after(10000,function(){
+		this.stop();
+	});
 }
 
 app.listen(3000);
